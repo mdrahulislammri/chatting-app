@@ -1,0 +1,12 @@
+{
+  "id": "identity_change_001",
+  "category": "Identity Key Change Suspension",
+  "description": "Remote public identity key change must immediately suspend active session until explicit user approval.",
+  "seed": "0xE2E2026",
+  "inputs": {
+    "device_id": "device-win-1",
+    "old_identity_key": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "new_identity_key": "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a"
+  },
+  "expected_result": "SESSION_SUSPENDED_SAFETY_LOCK"
+}

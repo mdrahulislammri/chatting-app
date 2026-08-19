@@ -1,0 +1,12 @@
+{
+  "id": "downgrade_001",
+  "category": "Anti-Downgrade Protocol Negotiation",
+  "description": "Altering protocol negotiation from v3.4 to v3.2 must produce transcript hash mismatch and fail handshake.",
+  "seed": "0xE2E2026",
+  "inputs": {
+    "client_a_supported": ["v3.2", "v3.4"],
+    "client_b_supported": ["v3.2", "v3.4"],
+    "tampered_negotiated": "v3.2"
+  },
+  "expected_result": "TRANSCRIPT_HASH_MISMATCH_HANDSHAKE_FAILED"
+}

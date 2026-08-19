@@ -1,0 +1,11 @@
+{
+  "id": "ratchet_jump_001",
+  "category": "Skipped Key Resource Exhaustion",
+  "description": "Injecting sequence numbers exceeding 200 skipped keys limit must be bounded and rejected.",
+  "seed": "0xE2E2026",
+  "inputs": {
+    "sequence_number": 99999,
+    "ciphertext": "42831ec2217774244b7221b784d0d49ce3fac0f00c0251d54020c242c7556942"
+  },
+  "expected_result": "STATE_ERROR_SKIPPED_KEY_LIMIT_REACHED"
+}

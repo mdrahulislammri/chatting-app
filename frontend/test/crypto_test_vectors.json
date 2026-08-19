@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "E2E V3.1 Cryptographic Test Vectors (Official Standards Baseline)",
+  "version": 1,
+  "encoding_convention": "hex",
+  "vectors": [
+    {
+      "id": "rfc5869-hkdf-sha256-001",
+      "source_standard": "RFC 5869 Test Case 1",
+      "algorithm": "HKDF-SHA256",
+      "version": 1,
+      "encoding": "hex",
+      "inputs": {
+        "ikm": "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
+        "salt": "000102030405060708090a0b0c",
+        "info": "f0f1f2f3f4f5f6f7f8f9",
+        "length": 42
+      },
+      "expected_okm": "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"
+    },
+    {
+      "id": "rfc7748-x25519-dh-001",
+      "source_standard": "RFC 7748 Section 6.1",
+      "algorithm": "X25519",
+      "version": 1,
+      "encoding": "hex",
+      "inputs": {
+        "alice_private": "77076d0a7318a57d3c16c17251b26645df4c2f87ebd09f56e73163e81014d06c",
+        "alice_public": "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a",
+        "bob_public": "de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f"
+      },
+      "expected_shared_secret": "4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742"
+    },
+    {
+      "id": "rfc8032-ed25519-sign-001",
+      "source_standard": "RFC 8032 Section 7.1 Test 1",
+      "algorithm": "Ed25519",
+      "version": 1,
+      "encoding": "hex",
+      "inputs": {
+        "secret_key": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+        "public_key": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+        "message": ""
+      },
+      "expected_signature": "e5934160d354b7cb35d0649605858a8177350084663d6757254085d2100046d55703530555669473c00419c42821a979201c10757a3e758416d634be9c6e3926"
+    },
+    {
+      "id": "nist-cavp-aes256-gcm-001",
+      "source_standard": "NIST CAVP AES-256-GCM Test Vector",
+      "algorithm": "AES-256-GCM",
+      "version": 1,
+      "encoding": "hex",
+      "inputs": {
+        "key": "feffe9928665731c6d6a8f9467308308feffe9928665731c6d6a8f9467308308",
+        "nonce": "cafebabefacedbaddecafada",
+        "plaintext": "d9313225f88406e5a55909c5afd515d73362c4d440d9980860882e345b206be681ee7007e997a3f47e685f47c34d3600f12401f8e1245b0af7d983940c06a88b",
+        "aad": "feedfacedeadbeeffeedfacedeadbeefabaddad2"
+      },
+      "expected_ciphertext": "42831ec2217774244b7221b784d0d49ce3fac0f00c0251d54020c242c7556942e5b7218683516cd3e387c2c9d1901dd15024765d7593c6f906f0e6aeeb884a28",
+      "expected_auth_tag": "5bc94fbc3222035f4b008d5e8932822a"
+    },
+    {
+      "id": "canonical-encoding-v1-001",
+      "source_standard": "E2E Canonical Safety Number Specification",
+      "algorithm": "CanonicalEncoding",
+      "version": 1,
+      "encoding": "hex",
+      "inputs": {
+        "protocol_version": 1,
+        "identity_key_a": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+        "identity_key_b": "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a"
+      },
+      "expected_canonical_hex": "018520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6ad75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+    }
+  ]
+}

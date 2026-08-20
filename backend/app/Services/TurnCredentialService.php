@@ -3,12 +3,17 @@
 namespace App\Services;
 
 use App\Models\User;
+use LogicException;
 
 class TurnCredentialService
 {
     public function generateCredentials(User $user, int $ttlSeconds = 3600): array
     {
-        $turnSecret = config('services.turn.secret', 'e2e_turn_default_secret_key');
+        $turnSecret = config('services.turn.secret');
+        if (empty($turnSecret)) {
+            throw new LogicException('TURN secret is not configured in server environment.');
+        }
+
         $turnUrl = config('services.turn.url', 'turn:turn.e2e.internal:3478');
 
         $timestamp = time() + $ttlSeconds;

@@ -3,7 +3,7 @@ import 'package:frontend/models/backup_envelope.dart';
 import 'package:frontend/services/backup_service.dart';
 
 void main() {
-  group('Product Track Module 3: Encrypted Backup & Recovery Engine Tests', () {
+  group('Product Track Module 3: AES-256-GCM Encrypted Backup & Recovery Engine Tests', () {
     late BackupService backupService;
     const ikSignPrivate = 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a';
     const ikDhPrivate = '8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a';
@@ -12,15 +12,19 @@ void main() {
       backupService = BackupService();
     });
 
-    test('1. BIP-39 24-Word Mnemonic Generation (256-bit Entropy + 8-bit Checksum)', () {
+    test('1. Standards-Compliant BIP-39 24-Word Mnemonic Generation & Validation', () {
       final mnemonic = backupService.generateMnemonic();
       final words = mnemonic.split(' ');
 
       expect(words.length, equals(24));
       expect(words.every((w) => w.isNotEmpty), isTrue);
+      expect(backupService.validateMnemonic(mnemonic), isTrue);
+
+      // Verify invalid mnemonic checksum or length rejection
+      expect(backupService.validateMnemonic('invalid word list'), isFalse);
     });
 
-    test('2. Encrypted Backup Envelope V1 Creation & Identity Restoration', () {
+    test('2. Real AES-256-GCM Backup Envelope V1 Creation & Identity Restoration', () {
       final mnemonic = backupService.generateMnemonic();
 
       final envelope = backupService.createEncryptedBackup(
@@ -31,7 +35,7 @@ void main() {
       );
 
       expect(envelope.protocolVersion, equals(1));
-      expect(envelope.kdfVersion, equals('PBKDF2-HMAC-SHA512-HKDF-SHA256-V1'));
+      expect(envelope.kdfVersion, equals('PBKDF2-HMAC-SHA512-HKDF-SHA256-AES256GCM-V1'));
       expect(envelope.salt.length, equals(64)); // 32 bytes hex
       expect(envelope.nonce.length, equals(24)); // 12 bytes hex (96-bit)
       expect(envelope.authTag.length, equals(32)); // 16 bytes hex
@@ -63,7 +67,7 @@ void main() {
       );
     });
 
-    test('4. Adversarial Attack: Tampered Auth Tag Rejection (Fail Closed)', () {
+    test('4. Adversarial Attack: Tampered Auth Tag Rejection (AES-GCM Fail Closed)', () {
       final mnemonic = backupService.generateMnemonic();
 
       final envelope = backupService.createEncryptedBackup(
@@ -92,7 +96,7 @@ void main() {
       );
     });
 
-    test('5. Adversarial Attack: Ciphertext Bit-Flipping Rejection (Fail Closed)', () {
+    test('5. Adversarial Attack: Ciphertext Bit-Flipping Rejection (AES-GCM Fail Closed)', () {
       final mnemonic = backupService.generateMnemonic();
 
       final envelope = backupService.createEncryptedBackup(
@@ -150,7 +154,6 @@ void main() {
         ikDhPrivate: ikDhPrivate,
       );
 
-      // Verify that every single backup export generates unique random 32-byte salt and fresh 12-byte nonce
       expect(envelope1.salt, isNot(equals(envelope2.salt)));
       expect(envelope1.nonce, isNot(equals(envelope2.nonce)));
       expect(envelope1.authTag, isNot(equals(envelope2.authTag)));

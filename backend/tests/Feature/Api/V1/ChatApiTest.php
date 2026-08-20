@@ -598,7 +598,8 @@ class ChatApiTest extends TestCase
         $initRes->assertStatus(201);
         $callId = $initRes->json('data.id');
 
-        // 3. Ephemeral TURN Credentials Endpoint Check -> Returns 200
+        // 3. Ephemeral TURN Credentials Endpoint Check -> Returns 200 when secret configured
+        config(['services.turn.secret' => 'test-turn-secret-key-123']);
         $turnRes = $this->actingAs($userA)->getJson('/api/v1/call/turn-credentials');
         $turnRes->assertStatus(200)
             ->assertJsonPath('success', true)
@@ -644,6 +645,57 @@ class ChatApiTest extends TestCase
             'type' => 'offer',
         ]);
         $invalidTransition->assertStatus(422);
+    }
+
+    public function test_turn_secret_unconfigured_fails_closed(): void
+    {
+        $user = User::factory()->create();
+        config(['services.turn.secret' => null]);
+
+        $this->expectException(\LogicException::class);
+        $turnService = new \App\Services\TurnCredentialService();
+        $turnService->generateCredentials($user);
+    }
+
+    public function test_prune_stale_abandoned_calls(): void
+    {
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
+
+        $convRes = $this->actingAs($userA)->postJson('/api/v1/conversations', [
+            'type' => 'direct',
+            'target_user_id' => $userB->id,
+        ]);
+        $convId = $convRes->json('data.id');
+
+        $staleCall = \App\Models\Call::create([
+            'conversation_id' => $convId,
+            'caller_id' => $userA->id,
+            'caller_device_id' => (string) Str::uuid(),
+            'type' => 'audio',
+            'state' => 'initiating',
+        ]);
+        $staleCall->timestamps = false;
+        $staleCall->created_at = now()->subSeconds(120);
+        $staleCall->save();
+
+        $activeCall = \App\Models\Call::create([
+            'conversation_id' => $convId,
+            'caller_id' => $userA->id,
+            'caller_device_id' => (string) Str::uuid(),
+            'type' => 'audio',
+            'state' => 'connected',
+        ]);
+        $activeCall->timestamps = false;
+        $activeCall->created_at = now()->subSeconds(120);
+        $activeCall->save();
+
+        $callService = new \App\Services\CallService();
+        $pruned = $callService->pruneStaleCalls(60);
+
+        $this->assertEquals(1, $pruned);
+        $this->assertDatabaseHas('calls', ['id' => $staleCall->id, 'state' => 'failed']);
+        $this->assertDatabaseHas('calls', ['id' => $activeCall->id, 'state' => 'connected']);
     }
 
     public function test_cross_feature_revocation_ripple_effect_chain(): void

@@ -144,4 +144,16 @@ class CallService
 
         $call->state = $newState;
     }
+
+    public function pruneStaleCalls(int $timeoutSeconds = 60): int
+    {
+        $cutoff = now()->subSeconds($timeoutSeconds);
+
+        return Call::whereIn('state', ['initiating', 'ringing', 'connecting'])
+            ->where('created_at', '<=', $cutoff)
+            ->update([
+                'state' => 'failed',
+                'ended_at' => now(),
+            ]);
+    }
 }

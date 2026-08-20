@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'turn' => [
+        'secret' => env('TURN_SECRET'),
+        'url' => env('TURN_URL', 'turn:turn.e2e.internal:3478'),
+    ],
+
 ];

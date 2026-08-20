@@ -191,7 +191,7 @@ void main() {
       // Plaintext: 00000000000000000000000000000000 (16 zero bytes)
       // AAD:       (Empty)
       // Exp Ciphertext: cea7403d4d606b6e074ec5d3baf39d18
-      // Exp Auth Tag:   a2be08210d8375d9e985486b30083e1d
+      // Exp Auth Tag:   d0d1c8a799996bf0265b98b5d48ab919
 
       final key = Uint8List(32);
       final iv = Uint8List(12);
@@ -219,14 +219,14 @@ void main() {
       // Authoritative Source: Bitcoin BIP-0039 Specification Vector 1 (bips/bip-0039/english.txt)
       // 256-bit zero entropy (32 zero bytes) + 8-bit SHA256 checksum (0x66 = 01100110 binary)
       // Words 1-23: 00000000000 (index 0 = 'abandon')
-      // Word 24: 00001100110 (index 102 = 'artefact' in official 0-indexed BIP-39 English wordlist)
+      // Word 24: 00001100110 (index 102 = 'art' in canonical 0-indexed BIP-39 English wordlist)
       // Passphrase: TREZOR
-      // Authoritative PBKDF2-HMAC-SHA512 (2048 iterations) Seed Hex:
-      // a681329c298064d84f23b2c93922fa6770e5621415df8f3521b44ec6595567b5e407d57ff553ea4840e69df8b2f9012eb21516f466b0ca8eb8817a3a9101f3db
+      // Authoritative PBKDF2-HMAC-SHA512 (2048 iterations) 512-bit (64-byte) Seed Hex:
+      // bda85446c68413707090a52022edd26a1c9462295029f2e60cd7c4f2bbd3097170af7a4d73245cafa9c3cca8d561a7c3de6f5d4a10be8ed2a5e608d68f92fcc8
 
-      const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon artefact';
+      const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art';
       const passphrase = 'TREZOR';
-      const expectedSeedHex = 'bc278df65838fb9afad25bdf791633d3692a8e48cc2a401ff0bb24a56eb9faec19bdde0ff084386d675e396e0a5c96db02c6b593396426b7f51e8541ce788e6d';
+      const expectedSeedHex = 'bda85446c68413707090a52022edd26a1c9462295029f2e60cd7c4f2bbd3097170af7a4d73245cafa9c3cca8d561a7c3de6f5d4a10be8ed2a5e608d68f92fcc8';
 
       expect(backupService.validateMnemonic(mnemonic), isTrue);
 

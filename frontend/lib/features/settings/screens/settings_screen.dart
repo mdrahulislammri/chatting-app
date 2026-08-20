@@ -183,10 +183,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return const BackupRecoveryScreen(
           ikSignPrivate: 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a',
           ikDhPrivate: '8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a',
+          showAppBar: false,
         );
       case 5:
         // Devices
-        return const DeviceSecurityScreen(currentDeviceId: 'desktop-device-001');
+        return const DeviceSecurityScreen(
+          currentDeviceId: 'desktop-device-001',
+          showAppBar: false,
+        );
       case 6:
       default:
         // About

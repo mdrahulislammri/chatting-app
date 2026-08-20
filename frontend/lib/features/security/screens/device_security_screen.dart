@@ -5,11 +5,13 @@ import 'package:frontend/services/device_service.dart';
 class DeviceSecurityScreen extends StatefulWidget {
   final String currentDeviceId;
   final DeviceService? deviceService;
+  final bool showAppBar;
 
   const DeviceSecurityScreen({
     super.key,
     required this.currentDeviceId,
     this.deviceService,
+    this.showAppBar = true,
   });
 
   @override
@@ -74,65 +76,86 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bodyContent = _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _devices.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.devices_outlined, size: 64, color: Colors.grey.shade500),
+                    const SizedBox(height: 16),
+                    const Text('Active Devices & Sessions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text('Windows PC (Current Device - Active Session)', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                  ],
+                ),
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: _devices.length,
+                separatorBuilder: (context, index) => const Divider(),
+                itemBuilder: (context, index) {
+                  final dev = _devices[index];
+                  final isCurrent = dev.id == widget.currentDeviceId;
+
+                  return ListTile(
+                    leading: Icon(
+                      dev.platform == 'android'
+                          ? Icons.phone_android
+                          : dev.platform == 'ios'
+                              ? Icons.phone_iphone
+                              : dev.platform == 'web'
+                                  ? Icons.web
+                                  : Icons.laptop,
+                      color: isCurrent ? Colors.blueAccent : Colors.grey,
+                    ),
+                    title: Row(
+                      children: [
+                        Text(
+                          dev.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        if (isCurrent) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.blue.withAlpha(40) : Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blueAccent),
+                            ),
+                            child: const Text(
+                              'Current Device',
+                              style: TextStyle(fontSize: 11, color: Colors.blueAccent),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    subtitle: Text('Identity: ${dev.publicIdentityKey.length > 16 ? dev.publicIdentityKey.substring(0, 16) : dev.publicIdentityKey}...'),
+                    trailing: isCurrent
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.block, color: Colors.red),
+                            onPressed: () => _revokeDevice(dev),
+                            tooltip: 'Revoke Device',
+                          ),
+                  );
+                },
+              );
+
+    if (!widget.showAppBar) {
+      return bodyContent;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Device Security & Active Sessions'),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: _devices.length,
-              separatorBuilder: (context, index) => const Divider(),
-              itemBuilder: (context, index) {
-                final dev = _devices[index];
-                final isCurrent = dev.id == widget.currentDeviceId;
-
-                return ListTile(
-                  leading: Icon(
-                    dev.platform == 'android'
-                        ? Icons.phone_android
-                        : dev.platform == 'ios'
-                            ? Icons.phone_iphone
-                            : dev.platform == 'web'
-                                ? Icons.web
-                                : Icons.laptop,
-                    color: isCurrent ? Colors.blue : Colors.grey,
-                  ),
-                  title: Row(
-                    children: [
-                      Text(
-                        dev.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      if (isCurrent) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.blue),
-                          ),
-                          child: const Text(
-                            'Current Device',
-                            style: TextStyle(fontSize: 11, color: Colors.blue),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  subtitle: Text('Identity: ${dev.publicIdentityKey.length > 16 ? dev.publicIdentityKey.substring(0, 16) : dev.publicIdentityKey}...'),
-                  trailing: isCurrent
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.block, color: Colors.red),
-                          onPressed: () => _revokeDevice(dev),
-                          tooltip: 'Revoke Device',
-                        ),
-                );
-              },
-            ),
+      body: bodyContent,
     );
   }
 }

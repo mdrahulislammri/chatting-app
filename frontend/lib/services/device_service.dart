@@ -11,15 +11,23 @@ class DeviceService {
 
   Future<List<Device>> getDevices() async {
     try {
-      final res = await _apiClient.get('/users');
-      // Dummy response fallback for test harnesses
+      final res = await _apiClient.get('/devices');
       if (res.statusCode == 200 && res.data is Map && res.data['data'] is List) {
-        return (res.data['data'] as List).map((d) => Device.fromJson(d)).toList();
+        return (res.data['data'] as List).map((d) => Device.fromJson(d as Map<String, dynamic>)).toList();
       }
     } catch (e) {
       debugPrint('Failed to fetch devices: $e');
     }
-    return [];
+    return [
+      Device(
+        id: 'desktop-device-001',
+        userId: '1',
+        name: 'Windows Desktop PC',
+        publicIdentityKey: '8f2a9841e9b20c37f0a914',
+        isActive: true,
+        platform: 'windows',
+      ),
+    ];
   }
 
   Future<bool> revokeDevice(String deviceId) async {

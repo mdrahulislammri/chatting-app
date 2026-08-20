@@ -19,13 +19,13 @@ class Device {
 
   factory Device.fromJson(Map<String, dynamic> json) {
     return Device(
-      id: json['id'] as String,
+      id: (json['id'] ?? '').toString(),
       userId: (json['user_id'] ?? '').toString(),
-      name: json['name'] as String,
-      publicIdentityKey: json['public_identity_key'] as String,
+      name: (json['name'] ?? '').toString(),
+      publicIdentityKey: (json['public_identity_key'] ?? '').toString(),
       isActive: json['is_active'] == true || json['is_active'] == 1,
-      pushToken: json['push_token'] as String?,
-      platform: (json['platform'] as String?) ?? 'android',
+      pushToken: json['push_token']?.toString(),
+      platform: (json['platform'] ?? 'android').toString(),
     );
   }
 

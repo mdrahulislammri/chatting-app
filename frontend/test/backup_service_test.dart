@@ -158,5 +158,24 @@ void main() {
       expect(envelope1.nonce, isNot(equals(envelope2.nonce)));
       expect(envelope1.authTag, isNot(equals(envelope2.authTag)));
     });
+
+    test('8. Legacy Insecure XOR Backup Envelope Rejection (Fail Closed)', () {
+      final mnemonic = backupService.generateMnemonic();
+
+      final legacyEnvelope = BackupEnvelope(
+        protocolVersion: 1,
+        kdfVersion: 'PBKDF2-HMAC-SHA512-HKDF-SHA256-V1', // Legacy XOR version
+        salt: '00' * 32,
+        nonce: '00' * 12,
+        ciphertext: '42831ec2217774244b7221b784d0d49ce3fac0f00c0251d54020c242c7556942',
+        authTag: '00' * 16,
+        createdAt: 1234567890,
+      );
+
+      expect(
+        () => backupService.restoreFromBackup(mnemonic: mnemonic, envelope: legacyEnvelope),
+        throwsA(isA<StateError>()),
+      );
+    });
   });
 }

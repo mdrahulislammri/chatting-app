@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/storage/secure_storage_service.dart';
@@ -58,7 +59,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = AuthState(user: user, isLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: _parseErrorMessage(e));
       return false;
     }
   }
@@ -70,7 +71,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = AuthState(user: user, isLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: _parseErrorMessage(e));
       return false;
     }
   }
@@ -79,6 +80,33 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true);
     await _authService.logout();
     state = AuthState(user: null, isLoading: false);
+  }
+
+  static String _parseErrorMessage(dynamic e) {
+    if (e is DioException) {
+      final responseData = e.response?.data;
+      if (responseData is Map) {
+        if (responseData['message'] != null && responseData['message'].toString().isNotEmpty) {
+          return responseData['message'].toString();
+        }
+        if (responseData['errors'] is Map) {
+          final errors = responseData['errors'] as Map;
+          if (errors.isNotEmpty) {
+            final firstError = errors.values.first;
+            if (firstError is List && firstError.isNotEmpty) {
+              return firstError.first.toString();
+            }
+          }
+        }
+      }
+      if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.connectionError) {
+        return 'Server connection failed. Please check if backend server is running.';
+      }
+      if (e.response?.statusCode == 422) {
+        return 'Invalid email or password. Please check your credentials.';
+      }
+    }
+    return e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
   }
 }
 

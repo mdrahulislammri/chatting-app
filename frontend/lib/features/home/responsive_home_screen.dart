@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../chat/screens/chat_screen.dart';
 import '../chat/widgets/empty_chat_widget.dart';
 import '../conversations/screens/conversation_list_screen.dart';
-import '../security/screens/device_security_screen.dart';
-import '../backup/screens/backup_recovery_screen.dart';
+import '../contacts/screens/contacts_screen.dart';
+import '../saved/screens/saved_messages_screen.dart';
+import '../settings/screens/settings_screen.dart';
+import '../profile/screens/profile_screen.dart';
 import '../../../models/user.dart';
 import '../../../providers/auth_provider.dart';
 
@@ -23,49 +25,30 @@ class _ResponsiveHomeScreenState extends ConsumerState<ResponsiveHomeScreen> {
   Widget _buildMainView(User? user, bool is3Pane) {
     switch (_selectedNavIndex) {
       case 1:
-        // Contacts View
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Contacts & People', style: TextStyle(fontWeight: FontWeight.bold)),
-            elevation: 0,
-          ),
-          body: ConversationListScreen(
-            selectedConversationId: _selectedConversationId,
-            onSelectConversation: (id) {
-              setState(() {
-                _selectedConversationId = id;
-                _selectedNavIndex = 0;
-              });
-            },
-          ),
+        // Contacts & People View (Single Clean AppBar)
+        return ContactsScreen(
+          onSelectConversation: (id) {
+            setState(() {
+              _selectedConversationId = id;
+              _selectedNavIndex = 0; // Jump to active chat
+            });
+          },
         );
       case 2:
-        // Settings & Security View
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Settings & Security'),
-            elevation: 0,
-          ),
-          body: const BackupRecoveryScreen(
-            ikSignPrivate: 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a',
-            ikDhPrivate: '8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a',
-          ),
-        );
+        // Saved Messages & Notes Vault
+        return const SavedMessagesScreen();
       case 3:
-        // Profile & Device Sessions
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('My Profile & Active Devices'),
-            elevation: 0,
-          ),
-          body: const DeviceSecurityScreen(currentDeviceId: 'desktop-device-001'),
-        );
+        // User Profile Screen
+        return const ProfileScreen();
+      case 4:
+        // Settings Engine
+        return const SettingsScreen();
       case 0:
       default:
         // Full 3-Pane Chat Dashboard
         return Row(
           children: [
-            // Pane 1: Conversations List
+            // Pane 1: Conversations Sidebar (320px)
             SizedBox(
               width: 320,
               child: ConversationListScreen(
@@ -79,7 +62,7 @@ class _ResponsiveHomeScreenState extends ConsumerState<ResponsiveHomeScreen> {
             ),
             const VerticalDivider(width: 1, thickness: 1),
 
-            // Pane 2: Active Chat Area
+            // Pane 2: Active Chat Area or Empty State
             Expanded(
               child: _selectedConversationId != null
                   ? Scaffold(
@@ -142,7 +125,7 @@ class _ResponsiveHomeScreenState extends ConsumerState<ResponsiveHomeScreen> {
                   : const EmptyChatWidget(),
             ),
 
-            // Pane 3: Profile Details Panel
+            // Pane 3: Profile Details Panel (300px)
             if ((is3Pane || _showRightPanel) && _selectedConversationId != null) ...[
               const VerticalDivider(width: 1, thickness: 1),
               SizedBox(
@@ -248,7 +231,7 @@ class _ResponsiveHomeScreenState extends ConsumerState<ResponsiveHomeScreen> {
             ),
           );
         } else {
-          // Mobile Single Pane
+          // Mobile Single Pane Layout
           if (_selectedConversationId != null) {
             return PopScope(
               canPop: false,
@@ -313,7 +296,7 @@ class _DesktopSidebar extends StatelessWidget {
           ),
           const SizedBox(height: 28),
 
-          // Nav Items
+          // Nav Items (5 Content Tabs)
           _NavItem(
             icon: Icons.chat_bubble_outline,
             activeIcon: Icons.chat_bubble,
@@ -331,9 +314,9 @@ class _DesktopSidebar extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _NavItem(
-            icon: Icons.settings_outlined,
-            activeIcon: Icons.settings,
-            label: 'Settings',
+            icon: Icons.bookmark_outline,
+            activeIcon: Icons.bookmark,
+            label: 'Saved Messages',
             isSelected: selectedIndex == 2,
             onTap: () => onSelect(2),
           ),
@@ -345,10 +328,18 @@ class _DesktopSidebar extends StatelessWidget {
             isSelected: selectedIndex == 3,
             onTap: () => onSelect(3),
           ),
+          const SizedBox(height: 12),
+          _NavItem(
+            icon: Icons.settings_outlined,
+            activeIcon: Icons.settings,
+            label: 'Settings',
+            isSelected: selectedIndex == 4,
+            onTap: () => onSelect(4),
+          ),
 
           const Spacer(),
 
-          // Logout Button
+          // Logout Action Button
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.redAccent, size: 22),
             tooltip: 'Logout',

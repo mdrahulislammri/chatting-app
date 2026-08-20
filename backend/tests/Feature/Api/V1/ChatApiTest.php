@@ -698,6 +698,19 @@ class ChatApiTest extends TestCase
         $this->assertDatabaseHas('calls', ['id' => $activeCall->id, 'state' => 'connected']);
     }
 
+    public function test_stale_calls_prune_command_is_registered_in_console_scheduler(): void
+    {
+        $schedule = app(\Illuminate\Console\Scheduling\Schedule::class);
+        $events = collect($schedule->events());
+
+        $staleCallEvent = $events->first(function ($event) {
+            return str_contains($event->command, 'calls:prune-stale');
+        });
+
+        $this->assertNotNull($staleCallEvent, 'Stale call cleanup command (calls:prune-stale) is not registered in console scheduler.');
+        $this->assertEquals('* * * * *', $staleCallEvent->expression);
+    }
+
     public function test_cross_feature_revocation_ripple_effect_chain(): void
     {
         $userA = User::factory()->create(['name' => 'User A']);

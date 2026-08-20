@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Api\V1\AttachmentController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BackupController;
 use App\Http\Controllers\Api\V1\BlockController;
+use App\Http\Controllers\Api\V1\CallController;
 use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\MessageController;
@@ -22,9 +24,11 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/users', [UserController::class, 'index']);
 
-        // Device Management routes
+        // Device Management & Push Token routes
         Route::post('/devices', [DeviceController::class, 'store']);
         Route::delete('/devices/{device}', [DeviceController::class, 'destroy']);
+        Route::post('/devices/{device}/push-token', [DeviceController::class, 'updatePushToken']);
+        Route::delete('/devices/{device}/push-token', [DeviceController::class, 'removePushToken']);
 
         // Prekey Bundle & Atomic Claim routes
         Route::post('/prekeys', [PrekeyController::class, 'store']);
@@ -58,5 +62,14 @@ Route::prefix('v1')->group(function () {
         Route::post('/conversations/{conversation}/attachments', [AttachmentController::class, 'upload']);
         Route::get('/conversations/{conversation}/attachments/{filename}', [AttachmentController::class, 'download'])->name('api.v1.attachments.download');
         Route::get('/conversations/{conversation}/media', [AttachmentController::class, 'media']);
+
+        // Encrypted Backup Envelope routes
+        Route::post('/backups', [BackupController::class, 'store']);
+        Route::get('/backups', [BackupController::class, 'show']);
+
+        // WebRTC Signaling & Ephemeral TURN Credential routes
+        Route::post('/conversations/{conversation}/call/initiate', [CallController::class, 'initiate']);
+        Route::post('/conversations/{conversation}/call/{call}/signal', [CallController::class, 'signal']);
+        Route::get('/call/turn-credentials', [CallController::class, 'turnCredentials']);
     });
 });

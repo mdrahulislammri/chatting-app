@@ -463,4 +463,186 @@ class ChatApiTest extends TestCase
             'auth_tag' => '5bc94fbc3222035f4b008d5e8932822a',
         ]);
     }
+
+    public function test_device_push_token_registration_revocation_and_suppression(): void
+    {
+        $userA = User::factory()->create();
+        $devA = Device::create([
+            'user_id' => $userA->id,
+            'name' => 'Rahul Android',
+            'public_identity_key' => 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a',
+        ]);
+
+        // 1. Register Push Token
+        $tokenRes = $this->actingAs($userA)->postJson("/api/v1/devices/{$devA->id}/push-token", [
+            'push_token' => 'fcm_token_1234567890_sample',
+            'platform' => 'android',
+        ]);
+        $tokenRes->assertStatus(200);
+        $this->assertDatabaseHas('devices', [
+            'id' => $devA->id,
+            'push_token' => 'fcm_token_1234567890_sample',
+            'platform' => 'android',
+        ]);
+
+        // 2. Remove Push Token
+        $removeRes = $this->actingAs($userA)->deleteJson("/api/v1/devices/{$devA->id}/push-token");
+        $removeRes->assertStatus(200);
+        $this->assertDatabaseHas('devices', [
+            'id' => $devA->id,
+            'push_token' => null,
+        ]);
+    }
+
+    public function test_encrypted_backup_envelope_upload_and_download(): void
+    {
+        $userA = User::factory()->create();
+
+        $salt = bin2hex(random_bytes(32));
+        $nonce = bin2hex(random_bytes(12)); // 12-byte fresh nonce
+        $authTag = bin2hex(random_bytes(16));
+
+        $uploadRes = $this->actingAs($userA)->postJson('/api/v1/backups', [
+            'protocol_version' => 1,
+            'kdf_version' => 'PBKDF2-HMAC-SHA512-HKDF-SHA256-V1',
+            'salt' => $salt,
+            'nonce' => $nonce,
+            'ciphertext' => '42831ec2217774244b7221b784d0d49ce3fac0f00c0251d54020c242c7556942',
+            'auth_tag' => $authTag,
+            'created_at' => 1787184000,
+        ]);
+
+        $uploadRes->assertStatus(201);
+        $this->assertDatabaseHas('backups', [
+            'user_id' => $userA->id,
+            'protocol_version' => 1,
+            'salt' => $salt,
+            'nonce' => $nonce,
+            'auth_tag' => $authTag,
+        ]);
+
+        $downloadRes = $this->actingAs($userA)->getJson('/api/v1/backups');
+        $downloadRes->assertStatus(200)
+            ->assertJsonPath('data.protocol_version', 1)
+            ->assertJsonPath('data.salt', $salt)
+            ->assertJsonPath('data.nonce', $nonce)
+            ->assertJsonPath('data.auth_tag', $authTag);
+    }
+
+    public function test_backup_envelope_idor_isolation_and_authorization_protection(): void
+    {
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
+
+        $salt = bin2hex(random_bytes(32));
+        $nonce = bin2hex(random_bytes(12));
+        $authTag = bin2hex(random_bytes(16));
+
+        $this->actingAs($userA)->postJson('/api/v1/backups', [
+            'protocol_version' => 1,
+            'kdf_version' => 'PBKDF2-HMAC-SHA512-HKDF-SHA256-V1',
+            'salt' => $salt,
+            'nonce' => $nonce,
+            'ciphertext' => '42831ec2217774244b7221b784d0d49ce3fac0f00c0251d54020c242c7556942',
+            'auth_tag' => $authTag,
+            'created_at' => 1787184000,
+        ]);
+
+        // IDOR Test: User B attempts to access User A's backup envelope -> Returns 404 Not Found for User B
+        $downloadUserB = $this->actingAs($userB)->getJson('/api/v1/backups');
+        $downloadUserB->assertStatus(404);
+    }
+
+    public function test_webrtc_call_signaling_authorization_state_machine_and_answer_race(): void
+    {
+        $userA = User::factory()->create(['name' => 'User A']);
+        $userB = User::factory()->create(['name' => 'User B']);
+        $userC = User::factory()->create(['name' => 'User C']);
+
+        $devA = Device::create([
+            'user_id' => $userA->id,
+            'name' => 'User A Laptop',
+            'public_identity_key' => 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a',
+        ]);
+
+        $devB1 = Device::create([
+            'user_id' => $userB->id,
+            'name' => 'User B Phone 1',
+            'public_identity_key' => '8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a',
+        ]);
+
+        $devB2 = Device::create([
+            'user_id' => $userB->id,
+            'name' => 'User B Phone 2',
+            'public_identity_key' => '9520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6b',
+        ]);
+
+        $convRes = $this->actingAs($userA)->postJson('/api/v1/conversations', [
+            'type' => 'direct',
+            'target_user_id' => $userB->id,
+        ]);
+        $convId = $convRes->json('data.id');
+
+        // 1. Non-member Call Initiation Rejection -> Returns 422/403
+        $unauthInit = $this->actingAs($userC)->postJson("/api/v1/conversations/{$convId}/call/initiate", [
+            'caller_device_id' => (string) Str::uuid(),
+            'type' => 'audio',
+        ]);
+        $unauthInit->assertStatus(422);
+
+        // 2. Member Call Initiation -> Returns 201 Created
+        $initRes = $this->actingAs($userA)->postJson("/api/v1/conversations/{$convId}/call/initiate", [
+            'caller_device_id' => $devA->id,
+            'type' => 'audio',
+        ]);
+        $initRes->assertStatus(201);
+        $callId = $initRes->json('data.id');
+
+        // 3. Ephemeral TURN Credentials Endpoint Check -> Returns 200
+        $turnRes = $this->actingAs($userA)->getJson('/api/v1/call/turn-credentials');
+        $turnRes->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.uris.0', 'turn:turn.e2e.internal:3478');
+
+        // 4. Offer Signal -> State transitions to ringing
+        $offerRes = $this->actingAs($userA)->postJson("/api/v1/conversations/{$convId}/call/{$callId}/signal", [
+            'sender_device_id' => $devA->id,
+            'type' => 'offer',
+            'payload' => ['sdp' => 'dummy-sdp-offer'],
+        ]);
+        $offerRes->assertStatus(200)
+            ->assertJsonPath('data.call.state', 'ringing');
+
+        // 5. Atomic Multi-Device Answer Race Condition Lock
+        // B1 answers first -> Wins race (Status 200, state connecting)
+        $answerB1 = $this->actingAs($userB)->postJson("/api/v1/conversations/{$convId}/call/{$callId}/signal", [
+            'sender_device_id' => $devB1->id,
+            'type' => 'answer',
+            'payload' => ['sdp' => 'dummy-sdp-answer-b1'],
+        ]);
+        $answerB1->assertStatus(200)
+            ->assertJsonPath('data.status', 'winner')
+            ->assertJsonPath('data.call.winner_device_id', $devB1->id);
+
+        // B2 answers second -> Rejected (Status 422, Call already answered)
+        $answerB2 = $this->actingAs($userB)->postJson("/api/v1/conversations/{$convId}/call/{$callId}/signal", [
+            'sender_device_id' => $devB2->id,
+            'type' => 'answer',
+            'payload' => ['sdp' => 'dummy-sdp-answer-b2'],
+        ]);
+        $answerB2->assertStatus(422);
+
+        // 6. Invalid State Transition Rejection (ended -> connected -> 422)
+        $endRes = $this->actingAs($userA)->postJson("/api/v1/conversations/{$convId}/call/{$callId}/signal", [
+            'sender_device_id' => $devA->id,
+            'type' => 'end',
+        ]);
+        $endRes->assertStatus(200);
+
+        $invalidTransition = $this->actingAs($userA)->postJson("/api/v1/conversations/{$convId}/call/{$callId}/signal", [
+            'sender_device_id' => $devA->id,
+            'type' => 'offer',
+        ]);
+        $invalidTransition->assertStatus(422);
+    }
 }

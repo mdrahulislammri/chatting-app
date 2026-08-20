@@ -25,6 +25,12 @@ class CanonicalEncoder {
     return blocks.join(' ');
   }
 
+  static String generateFingerprint(String key) {
+    final bytes = _hexToBytes(key.toLowerCase());
+    final digest = sha256.convert(bytes.isEmpty ? [0] : bytes);
+    return digest.toString();
+  }
+
   static List<int> _hexToBytes(String hex) {
     final bytes = <int>[];
     for (var i = 0; i < hex.length; i += 2) {

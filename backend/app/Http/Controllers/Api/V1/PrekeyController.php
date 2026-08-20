@@ -23,6 +23,10 @@ class PrekeyController extends Controller
         ]);
 
         $deviceId = $request->input('device_id');
+        $device = Device::find($deviceId);
+        if ($device && !$device->is_active) {
+            return response()->json(['success' => false, 'message' => 'Cannot upload prekeys for a revoked device.'], 422);
+        }
 
         DB::transaction(function () use ($request, $deviceId) {
             PrekeyBundleModel::updateOrCreate(

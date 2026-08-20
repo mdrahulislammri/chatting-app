@@ -18,6 +18,8 @@ class Device extends Model
         'name',
         'public_identity_key',
         'is_active',
+        'push_token',
+        'platform',
     ];
 
     protected $casts = [

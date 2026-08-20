@@ -81,9 +81,10 @@ class MessageService
                 }
             }
 
-            // Fire real-time WebSocket broadcast after DB transaction commits
-            DB::afterCommit(function () use ($message) {
+            // Fire real-time WebSocket broadcast and push notification alert after DB transaction commits
+            DB::afterCommit(function () use ($message, $conversation) {
                 broadcast(new MessageSent($message))->toOthers();
+                (new PushNotificationService())->sendNewMessageNotification($message, $conversation);
             });
 
             $message->load(['sender', 'replyTo', 'reactions', 'envelopes']);

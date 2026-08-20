@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../chat/screens/chat_screen.dart';
+import '../chat/widgets/empty_chat_widget.dart';
 import '../conversations/screens/conversation_list_screen.dart';
 import '../security/screens/device_security_screen.dart';
 import '../backup/screens/backup_recovery_screen.dart';
@@ -138,21 +139,7 @@ class _ResponsiveHomeScreenState extends ConsumerState<ResponsiveHomeScreen> {
                         conversationId: _selectedConversationId!,
                       ),
                     )
-                  : const Scaffold(
-                      body: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.forum_outlined, size: 72, color: Colors.grey),
-                            SizedBox(height: 16),
-                            Text(
-                              'Select a conversation to start chatting',
-                              style: TextStyle(fontSize: 16, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  : const EmptyChatWidget(),
             ),
 
             // Pane 3: Profile Details Panel

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/user.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/conversation_provider.dart';
+import '../../chats/dialogs/new_chat_dialog.dart';
 
 class ConversationListScreen extends ConsumerStatefulWidget {
   final Function(int conversationId)? onSelectConversation;
@@ -28,6 +29,19 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
     super.dispose();
   }
 
+  void _openNewChatDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => NewChatDialog(
+        onSelectConversation: (id) {
+          if (widget.onSelectConversation != null) {
+            widget.onSelectConversation!(id);
+          }
+        },
+      ),
+    );
+  }
+
   void _startChatWithUser(User user) async {
     final conversation = await ref
         .read(conversationListProvider.notifier)
@@ -50,10 +64,11 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
         title: const Text('Chats', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () => ref.read(authProvider.notifier).logout(),
+            icon: const Icon(Icons.edit_note, color: Colors.blueAccent),
+            tooltip: 'New Conversation',
+            onPressed: _openNewChatDialog,
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(

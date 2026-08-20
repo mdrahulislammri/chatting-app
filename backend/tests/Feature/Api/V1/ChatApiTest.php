@@ -645,4 +645,55 @@ class ChatApiTest extends TestCase
         ]);
         $invalidTransition->assertStatus(422);
     }
+
+    public function test_cross_feature_revocation_ripple_effect_chain(): void
+    {
+        $userA = User::factory()->create(['name' => 'User A']);
+        $userB = User::factory()->create(['name' => 'User B']);
+
+        $devA = Device::create([
+            'user_id' => $userA->id,
+            'name' => 'Revocation Test Device',
+            'public_identity_key' => 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a',
+            'push_token' => 'active_fcm_token_sample',
+            'is_active' => true,
+        ]);
+
+        $convRes = $this->actingAs($userA)->postJson('/api/v1/conversations', [
+            'type' => 'direct',
+            'target_user_id' => $userB->id,
+        ]);
+        $convId = $convRes->json('data.id');
+
+        // 1. Revoke Device
+        $revokeRes = $this->actingAs($userA)->deleteJson("/api/v1/devices/{$devA->id}");
+        $revokeRes->assertStatus(200);
+
+        // 2. Verify Push Token removed & is_active set to false
+        $this->assertDatabaseHas('devices', [
+            'id' => $devA->id,
+            'is_active' => false,
+            'push_token' => null,
+        ]);
+
+        // 3. Chain Verification: Revoked device attempts to initiate WebRTC call -> 422 Rejection
+        $callRes = $this->actingAs($userA)->postJson("/api/v1/conversations/{$convId}/call/initiate", [
+            'caller_device_id' => $devA->id,
+            'type' => 'audio',
+        ]);
+        $callRes->assertStatus(422);
+
+        // 4. Chain Verification: Revoked device attempts to upload prekeys -> 422 Rejection
+        $prekeyUpload = $this->actingAs($userA)->postJson('/api/v1/prekeys', [
+            'device_id' => $devA->id,
+            'signed_prekey' => '8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a',
+            'signed_prekey_signature' => 'e5934160d354b7cb35d0649605858a8177350084663d6757254085d2100046d55703530555669473c00419c42821a979201c10757a3e758416d634be9c6e3926',
+            'one_time_prekeys' => ['de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f'],
+        ]);
+        $prekeyUpload->assertStatus(422);
+
+        // 5. Chain Verification: Claiming prekey bundle for revoked device -> 410 Gone Rejection
+        $prekeyClaim = $this->actingAs($userA)->getJson("/api/v1/devices/{$devA->id}/prekey");
+        $prekeyClaim->assertStatus(410);
+    }
 }

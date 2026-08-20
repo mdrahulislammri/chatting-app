@@ -256,11 +256,3 @@ void main() {
 String _bytesToHex(Uint8List bytes) {
   return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 }
-
-Uint8List _hexToBytes(String hex) {
-  final bytes = Uint8List(hex.length ~/ 2);
-  for (int i = 0; i < hex.length; i += 2) {
-    bytes[i ~/ 2] = int.parse(hex.substring(i, i + 2), radix: 16);
-  }
-  return bytes;
-}

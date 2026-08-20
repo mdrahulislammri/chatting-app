@@ -25,7 +25,7 @@ class _ResponsiveHomeScreenState extends ConsumerState<ResponsiveHomeScreen> {
   Widget _buildMainView(User? user, bool is3Pane) {
     switch (_selectedNavIndex) {
       case 1:
-        // Contacts & People View (Single Clean AppBar)
+        // Contacts & People View
         return ContactsScreen(
           onSelectConversation: (id) {
             setState(() {
@@ -45,7 +45,7 @@ class _ResponsiveHomeScreenState extends ConsumerState<ResponsiveHomeScreen> {
         return const SettingsScreen();
       case 0:
       default:
-        // Full 3-Pane Chat Dashboard
+        // Full 3-Pane Chat Dashboard (Seamless Dark Layout - No Vertical Divider Lines)
         return Row(
           children: [
             // Pane 1: Conversations Sidebar (320px)
@@ -60,7 +60,6 @@ class _ResponsiveHomeScreenState extends ConsumerState<ResponsiveHomeScreen> {
                 },
               ),
             ),
-            const VerticalDivider(width: 1, thickness: 1),
 
             // Pane 2: Active Chat Area or Empty State
             Expanded(
@@ -127,7 +126,6 @@ class _ResponsiveHomeScreenState extends ConsumerState<ResponsiveHomeScreen> {
 
             // Pane 3: Profile Details Panel (300px)
             if ((is3Pane || _showRightPanel) && _selectedConversationId != null) ...[
-              const VerticalDivider(width: 1, thickness: 1),
               SizedBox(
                 width: 300,
                 child: Scaffold(
@@ -225,7 +223,6 @@ class _ResponsiveHomeScreenState extends ConsumerState<ResponsiveHomeScreen> {
                   onSelect: (index) => setState(() => _selectedNavIndex = index),
                   onLogout: () => ref.read(authProvider.notifier).logout(),
                 ),
-                const VerticalDivider(width: 1, thickness: 1),
                 Expanded(child: _buildMainView(user, is3Pane)),
               ],
             ),

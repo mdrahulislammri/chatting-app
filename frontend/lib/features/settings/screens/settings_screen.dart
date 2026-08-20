@@ -44,8 +44,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
           ),
-          const VerticalDivider(width: 1, thickness: 1),
-
           // Detail Content View
           Expanded(
             child: Padding(
